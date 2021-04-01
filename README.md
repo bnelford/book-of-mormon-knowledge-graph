@@ -19,6 +19,7 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 [![Contributors][contributors-shield]][contributors-url]
+[![Activity][activity-shield]][activity-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
@@ -164,7 +165,9 @@ Project Link: [https://github.com/bnelford/book-of-mormon-graphdb](https://githu
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/bnelford/book-of-mormon-graphdb?style=for-the-badge
-[contributors-url]: https://github.com/bnelford/repo/graphs/contributors
+[contributors-url]: https://github.com/bnelford/book-of-mormon-graphdb/graphs/contributors
+[activity-shield]: https://img.shields.io/github/commit-activity/y/bnelford/book-of-mormon-graphdb?style=for-the-badge
+[activity-url]: https://github.com/bnelford/book-of-mormon-graphdb/graphs/commit-activity
 [forks-shield]: https://img.shields.io/github/forks/bnelford/book-of-mormon-graphdb?style=for-the-badge
 [forks-url]: https://github.com/bnelford/book-of-mormon-graphdb/network/members
 [stars-shield]: https://img.shields.io/github/stars/bnelford/book-of-mormon-graphdb?style=for-the-badge
