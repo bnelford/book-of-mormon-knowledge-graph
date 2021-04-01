@@ -25,7 +25,8 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
-
+![GitHub followers](https://img.shields.io/github/followers/bnelford?style=for-the-badge)
+![Twitter Follow](https://img.shields.io/twitter/follow/beaunelford?style=social)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -40,7 +41,6 @@
     Project to visually define the Book of Mormon in a Graph database, with all its connections.
     <br />
     <a href="https://github.com/bnelford/book-of-mormon-graphdb"><strong>Explore the docs »</strong></a>
-    <br />
     <br />
     <a href="https://github.com/bnelford/book-of-mormon-graphdb">View Demo</a>
     ·
