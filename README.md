@@ -10,8 +10,6 @@
 *** bnelford, book-of-mormon-graphdb, @beaunelford, nelfordbc@gmail.com, book of mormon graph database, project to visually define the book of mormon in a graph database, with all its connections.
 -->
 
-
-
 <!-- PROJECT SHIELDS -->
 <!--
 *** I'm using markdown "reference style" links for readability.
@@ -28,12 +26,11 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
   <a href="https://github.com/bnelford/book-of-mormon-graphdb">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="images/logo.svg" alt="Logo" width="800" height="800">
   </a>
 
   <h3 align="center">Book of Mormon Graph Database</h3>
@@ -115,10 +112,7 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    git clone https://github.com/bnelford/book-of-mormon-graphdb.git
    ```
-2. Install NPM packages
-   ```sh
-   npm install
-   ```
+2. 
 
 
 
@@ -169,15 +163,15 @@ Project Link: [https://github.com/bnelford/book-of-mormon-graphdb](https://githu
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/bnelford/repo.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/bnelford/book-of-mormon-graphdb?style=for-the-badge
 [contributors-url]: https://github.com/bnelford/repo/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/bnelford/repo.svg?style=for-the-badge
-[forks-url]: https://github.com/bnelford/repo/network/members
-[stars-shield]: https://img.shields.io/github/stars/bnelford/repo.svg?style=for-the-badge
-[stars-url]: https://github.com/bnelford/repo/stargazers
-[issues-shield]: https://img.shields.io/github/issues/bnelford/repo.svg?style=for-the-badge
-[issues-url]: https://github.com/bnelford/repo/issues
-[license-shield]: https://img.shields.io/github/license/bnelford/repo.svg?style=for-the-badge
-[license-url]: https://github.com/bnelford/repo/blob/main/LICENSE.txt
+[forks-shield]: https://img.shields.io/github/forks/bnelford/book-of-mormon-graphdb?style=for-the-badge
+[forks-url]: https://github.com/bnelford/book-of-mormon-graphdb/network/members
+[stars-shield]: https://img.shields.io/github/stars/bnelford/book-of-mormon-graphdb?style=for-the-badge
+[stars-url]: https://github.com/bnelford/book-of-mormon-graphdb/stargazers
+[issues-shield]: https://img.shields.io/github/issues/bnelford/book-of-mormon-graphdb?style=for-the-badge
+[issues-url]: https://github.com/bnelford/book-of-mormon-graphdb/issues
+[license-shield]: https://img.shields.io/github/license/bnelford/book-of-mormon-graphdb?style=for-the-badge
+[license-url]: https://github.com/bnelford/book-of-mormon-graphdb/blob/main/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/beaunelford/
