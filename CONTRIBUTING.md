@@ -16,7 +16,6 @@ This project is designed to be enhanced using AI tools like ChatGPT, Claude, or 
 
 2. **Set Up Local Environment**
    ```bash
-   cd grok-version
    python3 server.py  # Start local server
    # Open http://localhost:8000/knowledge-graph.html
    ```
@@ -180,12 +179,18 @@ node server.js
 
 ### File Structure
 ```
-grok-version/
-├── knowledge-graph.html    # Main application
-├── knowledge-graph.json    # Data file (edit this)
-├── server.py              # Python server
-├── server.js              # Node.js server
-└── readme.md              # Detailed documentation
+book-of-mormon-knowledge-graph/
+├── knowledge-graph.html          # Main application
+├── knowledge-graph.json          # Data file (edit this)
+├── server.py                     # Python server
+├── server.js                     # Node.js server
+├── validate.py                   # Validation script
+├── contribution-template.json    # Template for contributions
+├── CONTRIBUTING.md               # This file
+├── README.md                     # Main documentation
+└── .github/                      # GitHub templates
+    ├── ISSUE_TEMPLATE/
+    └── pull_request_template.md
 ```
 
 ## 🎉 Recognition
