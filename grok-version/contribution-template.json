@@ -1,0 +1,70 @@
+{
+  "description": "Template for adding new entities and relationships to the Book of Mormon Knowledge Graph",
+  "instructions": [
+    "1. Copy the relevant sections below",
+    "2. Replace the example data with your actual entities and relationships",
+    "3. Ensure all scriptural references are accurate",
+    "4. Test your additions using validate.py",
+    "5. Submit a pull request with your changes"
+  ],
+  "example_nodes": [
+    {
+      "id": "example_person",
+      "label": "Example Person",
+      "type": "person",
+      "references": ["1 Nephi 1:1", "1 Nephi 2:1"]
+    },
+    {
+      "id": "example_place",
+      "label": "Example Place",
+      "type": "place", 
+      "references": ["1 Nephi 2:2", "1 Nephi 2:4"]
+    },
+    {
+      "id": "example_event",
+      "label": "Example Event",
+      "type": "event",
+      "date": "600 B.C.",
+      "references": ["1 Nephi 1:4", "1 Nephi 1:18"]
+    },
+    {
+      "id": "example_group",
+      "label": "Example Group",
+      "type": "group",
+      "references": ["1 Nephi 2:5", "1 Nephi 8:1"]
+    }
+  ],
+  "example_edges": [
+    {
+      "from": "example_person",
+      "to": "example_place",
+      "label": "resided_in",
+      "references": ["1 Nephi 2:2"]
+    },
+    {
+      "from": "example_person",
+      "to": "example_event",
+      "label": "involved_in",
+      "references": ["1 Nephi 1:4"]
+    },
+    {
+      "from": "example_person",
+      "to": "example_group",
+      "label": "member_of",
+      "references": ["1 Nephi 2:5"]
+    }
+  ],
+  "relationship_types": {
+    "family": ["parent_of", "sibling_of", "ancestor_of"],
+    "social": ["allied_with", "opposed_by", "taught_by"],
+    "spiritual": ["prophesied_by", "converted"],
+    "geographical": ["occurred_at", "resided_in"],
+    "group": ["member_of", "founded"],
+    "event": ["involved_in"]
+  },
+  "ai_prompts": {
+    "add_entities": "I'm working on a Book of Mormon knowledge graph. I need to add [entity type] entities from [specific book/chapter]. Please help me identify key entities, their scriptural references, and relationships. Format as JSON with nodes and edges arrays.",
+    "find_relationships": "Analyze these Book of Mormon entities and identify relationships between them: [paste entity list]. Focus on family, social, spiritual, geographical, and group relationships. Provide scriptural references for each relationship.",
+    "verify_references": "I have this relationship in my Book of Mormon knowledge graph: [paste relationship]. Please verify if this relationship is accurate according to the text, if the scriptural references are correct, and if there are additional references I should include."
+  }
+}

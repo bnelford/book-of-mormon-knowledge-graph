@@ -76,6 +76,39 @@
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
+    .filter-section {
+      padding: 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #2d3748;
+    }
+
+    .filter-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-legend .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .filter-legend .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
     .search-section h3 {
       font-size: 16px;
       font-weight: 600;
@@ -148,6 +181,18 @@
       padding: 16px;
       border-radius: 12px;
       border-left: 4px solid #667eea;
+      transition: all 0.3s ease;
+      min-height: 120px;
+    }
+
+    .selected-node {
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%) !important;
+      border-left: 4px solid #667eea !important;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15) !important;
+    }
+
+    .selected-node h4 {
+      color: #667eea !important;
     }
 
     .legend {
@@ -349,9 +394,50 @@
       <div id="searchResults"></div>
     </div>
     
+    <div class="filter-section">
+      <h3>Filter Relationships</h3>
+      <select id="edgeFilter" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; margin-bottom: 12px;">
+        <option value="all">All Relationships</option>
+        <option value="sibling_of">Sibling Of</option>
+        <option value="parent_of">Parent Of</option>
+        <option value="member_of">Member Of</option>
+        <option value="involved_in">Involved In</option>
+        <option value="occurred_at">Occurred At</option>
+        <option value="founded">Founded</option>
+        <option value="converted">Converted</option>
+        <option value="ancestor_of">Ancestor Of</option>
+        <option value="opposed_by">Opposed By</option>
+        <option value="prophesied_by">Prophesied By</option>
+        <option value="taught_by">Taught By</option>
+        <option value="allied_with">Allied With</option>
+      </select>
+      <div class="filter-legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #e53e3e;"></div>
+          <span>Opposed By</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #3182ce;"></div>
+          <span>Prophesied By</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #38a169;"></div>
+          <span>Taught By</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #805ad5;"></div>
+          <span>Allied With</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #a0aec0;"></div>
+          <span>Other</span>
+        </div>
+      </div>
+    </div>
+    
     <div class="details-section">
       <h3>Details</h3>
-      <div id="detailsContent"><div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div></div>
+      <div id="detailsContent"><div style="text-align: center; color: #a0aec0; font-style: italic;">Click on a node to see detailed information, or hover over nodes and edges to preview details.</div></div>
     </div>
   </div>
 </div>
@@ -384,9 +470,35 @@
         event: '#FFC300'
       };
 
+      // Add color coding for edges based on their relationship type
+      var colorByRelationship = {
+        'opposed_by': '#e53e3e',
+        'prophesied_by': '#3182ce',
+        'taught_by': '#38a169',
+        'allied_with': '#805ad5',
+        'sibling_of': '#ed8936',
+        'parent_of': '#d69e2e',
+        'member_of': '#38b2ac',
+        'involved_in': '#4299e1',
+        'occurred_at': '#9f7aea',
+        'founded': '#f56565',
+        'converted': '#48bb78',
+        'ancestor_of': '#ed64a6'
+      };
+
       graphData.nodes = graphData.nodes.map(node => ({
         ...node,
         color: colorByType[node.type] || '#CCCCCC' // Default color for unknown types
+      }));
+
+      // Add color coding to edges
+      graphData.edges = graphData.edges.map(edge => ({
+        ...edge,
+        color: {
+          color: colorByRelationship[edge.label] || '#a0aec0',
+          highlight: colorByRelationship[edge.label] || '#667eea',
+          hover: colorByRelationship[edge.label] || '#667eea'
+        }
       }));
 
       // Initialize vis.js network
@@ -479,26 +591,122 @@
       var detailsPane = document.getElementById("detailsPane");
       var detailsContent = document.getElementById("detailsContent");
 
+      // Function to create clickable reference links
+      function createReferenceLinks(references) {
+        if (!references || references.length === 0) {
+          return '<span style="color: #a0aec0; font-style: italic;">No references available</span>';
+        }
+        
+        return references.map(ref => {
+          // Parse the reference (e.g., "1 Nephi 1:4" -> "1 Nephi 1:4")
+          const encodedRef = encodeURIComponent(ref);
+          const churchUrl = `https://www.churchofjesuschrist.org/study/scriptures/bofm/${encodedRef.toLowerCase().replace(/\s+/g, '-')}?lang=eng`;
+          const ldsUrl = `https://www.lds.org/scriptures/bofm/${encodedRef.toLowerCase().replace(/\s+/g, '-')}?lang=eng`;
+          
+          return `<a href="${churchUrl}" target="_blank" rel="noopener noreferrer" 
+                     style="color: #667eea; text-decoration: none; font-size: 13px; 
+                            display: inline-block; margin: 2px 4px 2px 0; padding: 2px 6px; 
+                            background: #f7fafc; border-radius: 4px; border: 1px solid #e2e8f0;
+                            transition: all 0.2s ease;" 
+                     onmouseover="this.style.background='#667eea'; this.style.color='white'; this.style.borderColor='#667eea';"
+                     onmouseout="this.style.background='#f7fafc'; this.style.color='#667eea'; this.style.borderColor='#e2e8f0';">
+                   ${ref}
+                 </a>`;
+        }).join('');
+      }
+
+      // Function to get connected nodes
+      function getConnectedNodes(nodeId) {
+        const connectedEdges = graphData.edges.filter(edge => 
+          edge.from === nodeId || edge.to === nodeId
+        );
+        
+        const connectedNodeIds = new Set();
+        connectedEdges.forEach(edge => {
+          if (edge.from === nodeId) connectedNodeIds.add(edge.to);
+          if (edge.to === nodeId) connectedNodeIds.add(edge.from);
+        });
+        
+        return Array.from(connectedNodeIds).map(id => {
+          const node = graphData.nodes.find(n => n.id === id);
+          const edge = connectedEdges.find(e => 
+            (e.from === nodeId && e.to === id) || (e.to === nodeId && e.from === id)
+          );
+          return { node, relationship: edge ? edge.label : 'connected' };
+        });
+      }
+
+      // Function to display detailed node information
+      function displayNodeDetails(nodeData, isSelected = false) {
+        const referencesHtml = createReferenceLinks(nodeData.references);
+        const selectionClass = isSelected ? 'selected-node' : '';
+        const connectedNodes = isSelected ? getConnectedNodes(nodeData.id) : [];
+        
+        let connectionsHtml = '';
+        if (isSelected && connectedNodes.length > 0) {
+          connectionsHtml = `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+              <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Connected Entities:</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                ${connectedNodes.map(({ node, relationship }) => `
+                  <span style="display: inline-block; padding: 2px 6px; background: #edf2f7; 
+                               border-radius: 4px; font-size: 12px; color: #4a5568; cursor: pointer;
+                               transition: all 0.2s ease;" 
+                        onmouseover="this.style.background='#667eea'; this.style.color='white';"
+                        onmouseout="this.style.background='#edf2f7'; this.style.color='#4a5568';"
+                        onclick="
+                          const nodeData = graphData.nodes.find(n => n.id === '${node.id}');
+                          if (nodeData) {
+                            selectedNodeId = '${node.id}';
+                            displayNodeDetails(nodeData, true);
+                            highlightNode('${node.id}');
+                          }
+                        ">
+                    ${node.label}
+                    <span style="color: #a0aec0; font-size: 10px;">(${relationship})</span>
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+        
+        detailsContent.innerHTML = `
+          <div class="fade-in ${selectionClass}">
+            <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 18px; font-weight: 600; 
+                       ${isSelected ? 'color: #667eea;' : ''}">
+              ${nodeData.label}
+              ${isSelected ? '<span style="font-size: 12px; color: #718096; margin-left: 8px;">(Selected)</span>' : ''}
+            </h4>
+            <div style="margin-bottom: 12px;">
+              <span style="font-weight: 500; color: #4a5568;">Type:</span> 
+              <span style="color: #667eea; font-weight: 500; text-transform: capitalize;">${nodeData.type}</span>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <span style="font-weight: 500; color: #4a5568;">ID:</span> 
+              <span style="color: #718096; font-family: monospace; font-size: 12px;">${nodeData.id}</span>
+            </div>
+            <div>
+              <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Scriptural References:</div>
+              <div style="line-height: 1.6;">
+                ${referencesHtml}
+              </div>
+            </div>
+            ${nodeData.date ? `
+              <div style="margin-top: 12px;">
+                <span style="font-weight: 500; color: #4a5568;">Date:</span> 
+                <span style="color: #667eea; font-weight: 500;">${nodeData.date}</span>
+              </div>
+            ` : ''}
+            ${connectionsHtml}
+          </div>`;
+      }
+
       network.on('hoverNode', function (params) {
         var nodeId = params.node;
         var nodeData = graphData.nodes.find(node => node.id === nodeId);
         if (nodeData) {
-          detailsContent.innerHTML = `
-            <div class="fade-in">
-              <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">${nodeData.label}</h4>
-              <div style="margin-bottom: 8px;">
-                <span style="font-weight: 500; color: #4a5568;">Type:</span> 
-                <span style="color: #667eea; font-weight: 500;">${nodeData.type}</span>
-              </div>
-              <div style="margin-bottom: 8px;">
-                <span style="font-weight: 500; color: #4a5568;">ID:</span> 
-                <span style="color: #718096;">${nodeData.id}</span>
-              </div>
-              <div>
-                <span style="font-weight: 500; color: #4a5568;">References:</span><br>
-                <span style="color: #718096; font-size: 13px;">${nodeData.references ? nodeData.references.join(', ') : 'None available'}</span>
-              </div>
-            </div>`;
+          displayNodeDetails(nodeData);
         }
       });
 
@@ -506,37 +714,117 @@
         var edgeId = params.edge;
         var edgeData = graphData.edges.find(edge => edge.id === edgeId);
         if (edgeData) {
+          const fromNode = graphData.nodes.find(n => n.id === edgeData.from);
+          const toNode = graphData.nodes.find(n => n.id === edgeData.to);
+          const referencesHtml = edgeData.references ? createReferenceLinks(edgeData.references) : '<span style="color: #a0aec0; font-style: italic;">No references available</span>';
+          
           detailsContent.innerHTML = `
             <div class="fade-in">
-              <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">Connection</h4>
+              <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">Relationship</h4>
               <div style="margin-bottom: 8px;">
                 <span style="font-weight: 500; color: #4a5568;">From:</span> 
-                <span style="color: #667eea; font-weight: 500;">${edgeData.from}</span>
+                <span style="color: #667eea; font-weight: 500;">${fromNode ? fromNode.label : edgeData.from}</span>
               </div>
               <div style="margin-bottom: 8px;">
                 <span style="font-weight: 500; color: #4a5568;">To:</span> 
-                <span style="color: #667eea; font-weight: 500;">${edgeData.to}</span>
+                <span style="color: #667eea; font-weight: 500;">${toNode ? toNode.label : edgeData.to}</span>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <span style="font-weight: 500; color: #4a5568;">Relationship:</span> 
+                <span style="color: #718096; text-transform: capitalize;">${edgeData.label || 'Connected'}</span>
               </div>
               <div>
-                <span style="font-weight: 500; color: #4a5568;">Relationship:</span> 
-                <span style="color: #718096;">${edgeData.label || 'Connected'}</span>
+                <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Scriptural References:</div>
+                <div style="line-height: 1.6;">
+                  ${referencesHtml}
+                </div>
               </div>
             </div>`;
         }
       });
 
+      // Track selected node
+      var selectedNodeId = null;
+
+      // Handle node clicks
+      network.on('click', function (params) {
+        if (params.nodes.length > 0) {
+          var nodeId = params.nodes[0];
+          var nodeData = graphData.nodes.find(node => node.id === nodeId);
+          
+          if (nodeData) {
+            selectedNodeId = nodeId;
+            displayNodeDetails(nodeData, true);
+            highlightNode(nodeId);
+            
+            // Add a small animation to show selection
+            detailsContent.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              detailsContent.style.transform = 'scale(1)';
+            }, 200);
+          }
+        } else {
+          // Clicked on empty space - deselect
+          selectedNodeId = null;
+          detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Click on a node to see detailed information, or hover over nodes and edges to preview details.</div>';
+          
+          // Reset node highlighting
+          graphData.nodes = graphData.nodes.map(node => ({
+            ...node,
+            borderWidth: 3,
+            shadow: {
+              enabled: true,
+              color: 'rgba(0, 0, 0, 0.2)',
+              size: 8,
+              x: 2,
+              y: 2
+            }
+          }));
+          
+          network.setData({
+            nodes: new vis.DataSet(graphData.nodes),
+            edges: new vis.DataSet(graphData.edges)
+          });
+        }
+      });
+
       network.on('blurNode', function () {
-        detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div>';
+        if (!selectedNodeId) {
+          detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Click on a node to see detailed information, or hover over nodes and edges to preview details.</div>';
+        }
       });
 
       network.on('blurEdge', function () {
-        detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div>';
+        if (!selectedNodeId) {
+          detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Click on a node to see detailed information, or hover over nodes and edges to preview details.</div>';
+        }
       });
 
       // Legend and title are now in the HTML structure
 
       var searchInput = document.getElementById("searchInput");
       var searchResults = document.getElementById("searchResults");
+      var edgeFilter = document.getElementById("edgeFilter");
+
+      // Edge filtering functionality
+      function filterEdges(relationshipType) {
+        var filteredEdges;
+        if (relationshipType === 'all') {
+          filteredEdges = graphData.edges;
+        } else {
+          filteredEdges = graphData.edges.filter(edge => edge.label === relationshipType);
+        }
+        
+        network.setData({
+          nodes: new vis.DataSet(graphData.nodes),
+          edges: new vis.DataSet(filteredEdges)
+        });
+      }
+
+      // Add event listener for edge filtering
+      edgeFilter.addEventListener('change', function() {
+        filterEdges(this.value);
+      });
 
       // Add a function to highlight a node
       function highlightNode(nodeId) {
@@ -580,26 +868,20 @@
             var resultDiv = document.createElement("div");
             resultDiv.textContent = node.label;
             resultDiv.addEventListener("click", function () {
-              // Simulate selecting the node
-              detailsContent.innerHTML = `
-                <div class="fade-in">
-                  <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">${node.label}</h4>
-                  <div style="margin-bottom: 8px;">
-                    <span style="font-weight: 500; color: #4a5568;">Type:</span> 
-                    <span style="color: #667eea; font-weight: 500;">${node.type}</span>
-                  </div>
-                  <div style="margin-bottom: 8px;">
-                    <span style="font-weight: 500; color: #4a5568;">ID:</span> 
-                    <span style="color: #718096;">${node.id}</span>
-                  </div>
-                  <div>
-                    <span style="font-weight: 500; color: #4a5568;">References:</span><br>
-                    <span style="color: #718096; font-size: 13px;">${node.references ? node.references.join(', ') : 'None available'}</span>
-                  </div>
-                </div>`;
-
-              // Highlight the selected node
+              // Select the node from search
+              selectedNodeId = node.id;
+              displayNodeDetails(node, true);
               highlightNode(node.id);
+              
+              // Clear search results
+              searchInput.value = '';
+              searchResults.innerHTML = '';
+              
+              // Add selection animation
+              detailsContent.style.transform = 'scale(1.02)';
+              setTimeout(() => {
+                detailsContent.style.transform = 'scale(1)';
+              }, 200);
             });
             searchResults.appendChild(resultDiv);
           });
