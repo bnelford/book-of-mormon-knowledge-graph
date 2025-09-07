@@ -201,11 +201,39 @@ Contributors will be recognized in:
 - GitHub contributors list
 - Special acknowledgments
 
+## 🔍 Automated Quality Assurance
+
+This project uses GitHub Actions workflows to automatically validate all contributions:
+
+### Validation Workflows
+- **JSON Structure Validation**: Ensures proper format and required fields
+- **Scriptural Reference Validation**: Verifies all references are valid Book of Mormon citations
+- **Relationship Validation**: Checks that all relationships use valid types
+- **Data Integrity Testing**: Ensures no orphaned edges or duplicate IDs
+
+### Code Quality Checks
+- **Python Linting**: Checks code style and formatting
+- **JavaScript Linting**: Validates JavaScript code quality
+- **HTML Validation**: Ensures proper HTML structure
+- **Security Scanning**: Checks for vulnerabilities and security issues
+
+### Performance & Compatibility
+- **Load Time Testing**: Ensures the application loads quickly
+- **Browser Compatibility**: Tests across different browsers
+- **Server Functionality**: Validates both Python and Node.js servers
+
+### Dependency Monitoring
+- **External Dependencies**: Tracks CDN availability and updates
+- **Security Updates**: Monitors for known vulnerabilities
+- **Version Compatibility**: Ensures all dependencies work together
+
+All pull requests must pass these automated checks before they can be merged. If a check fails, please review the error messages and fix the issues.
+
 ## 📞 Getting Help
 
 - **Issues**: Create a GitHub issue for questions
 - **Discussions**: Use GitHub Discussions for ideas
-- **Documentation**: Check the detailed README in grok-version/
+- **Documentation**: Check the detailed README
 - **Community**: Join project discussions
 
 ## 📜 Code of Conduct

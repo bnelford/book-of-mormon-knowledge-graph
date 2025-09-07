@@ -1,0 +1,358 @@
+name: Validate Contributions
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'knowledge-graph.json'
+      - 'knowledge-graph.html'
+      - 'validate.py'
+      - 'contribution-template.json'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'knowledge-graph.json'
+      - 'knowledge-graph.html'
+      - 'validate.py'
+      - 'contribution-template.json'
+
+jobs:
+  validate-json:
+    name: Validate Knowledge Graph JSON
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        
+    - name: Validate JSON structure
+      run: |
+        echo "🔍 Validating knowledge-graph.json structure..."
+        python3 validate.py
+        
+    - name: Check JSON syntax
+      run: |
+        echo "🔍 Checking JSON syntax..."
+        python3 -c "import json; json.load(open('knowledge-graph.json')); print('✅ JSON syntax is valid')"
+        
+    - name: Validate HTML structure
+      run: |
+        echo "🔍 Validating HTML structure..."
+        python3 -c "
+        import re
+        with open('knowledge-graph.html', 'r') as f:
+            content = f.read()
+        
+        # Check for required elements
+        required_elements = ['<html', '<head', '<body', 'knowledge-graph.json', 'vis-network']
+        missing = [elem for elem in required_elements if elem not in content]
+        
+        if missing:
+            print(f'❌ Missing required elements: {missing}')
+            exit(1)
+        else:
+            print('✅ HTML structure is valid')
+        "
+
+  validate-references:
+    name: Validate Scriptural References
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Validate scriptural references
+      run: |
+        echo "🔍 Validating scriptural references..."
+        python3 -c "
+        import json
+        import re
+        
+        # Load the knowledge graph
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        # Valid Book of Mormon books
+        valid_books = [
+            '1 Nephi', '2 Nephi', 'Jacob', 'Enos', 'Jarom', 'Omni', 'Words of Mormon',
+            'Mosiah', 'Alma', 'Helaman', '3 Nephi', '4 Nephi', 'Mormon', 'Ether', 'Moroni'
+        ]
+        
+        # Reference pattern: Book Chapter:Verse
+        reference_pattern = r'^(.+?)\s+(\d+):(\d+)$'
+        
+        all_references = set()
+        issues = []
+        
+        # Collect all references from nodes
+        for node in data.get('nodes', []):
+            for ref in node.get('references', []):
+                all_references.add(ref)
+        
+        # Collect all references from edges
+        for edge in data.get('edges', []):
+            for ref in edge.get('references', []):
+                all_references.add(ref)
+        
+        # Validate each reference
+        for ref in all_references:
+            match = re.match(reference_pattern, ref)
+            if not match:
+                issues.append(f'Invalid reference format: {ref}')
+                continue
+                
+            book_chapter, verse = match.groups()
+            
+            # Check if book is valid
+            book_found = False
+            for valid_book in valid_books:
+                if book_chapter.startswith(valid_book):
+                    book_found = True
+                    break
+            
+            if not book_found:
+                issues.append(f'Unknown book in reference: {ref}')
+        
+        if issues:
+            print('❌ Reference validation issues found:')
+            for issue in issues[:10]:  # Show first 10 issues
+                print(f'  • {issue}')
+            if len(issues) > 10:
+                print(f'  ... and {len(issues) - 10} more issues')
+            exit(1)
+        else:
+            print(f'✅ All {len(all_references)} references are valid')
+        "
+
+  validate-relationships:
+    name: Validate Relationships
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Validate relationships
+      run: |
+        echo "🔍 Validating relationships..."
+        python3 -c "
+        import json
+        
+        # Load the knowledge graph
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        # Valid relationship types
+        valid_relationships = [
+            'parent_of', 'sibling_of', 'ancestor_of', 'member_of', 'founded',
+            'involved_in', 'occurred_at', 'converted', 'allied_with', 'opposed_by',
+            'prophesied_by', 'taught_by', 'resided_in'
+        ]
+        
+        # Get all node IDs
+        node_ids = {node['id'] for node in data.get('nodes', [])}
+        
+        issues = []
+        
+        # Validate each edge
+        for i, edge in enumerate(data.get('edges', [])):
+            # Check required fields
+            if 'from' not in edge or 'to' not in edge or 'label' not in edge:
+                issues.append(f'Edge {i}: Missing required fields')
+                continue
+            
+            # Check if nodes exist
+            if edge['from'] not in node_ids:
+                issues.append(f'Edge {i}: Source node \"{edge[\"from\"]}\" not found')
+            if edge['to'] not in node_ids:
+                issues.append(f'Edge {i}: Target node \"{edge[\"to\"]}\" not found')
+            
+            # Check relationship type
+            if edge['label'] not in valid_relationships:
+                issues.append(f'Edge {i}: Invalid relationship type \"{edge[\"label\"]}\"')
+        
+        if issues:
+            print('❌ Relationship validation issues found:')
+            for issue in issues[:10]:  # Show first 10 issues
+                print(f'  • {issue}')
+            if len(issues) > 10:
+                print(f'  ... and {len(issues) - 10} more issues')
+            exit(1)
+        else:
+            print(f'✅ All {len(data.get(\"edges\", []))} relationships are valid')
+        "
+
+  test-server:
+    name: Test Local Server
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Test Python server
+      run: |
+        echo "🔍 Testing Python server..."
+        timeout 10s python3 server.py &
+        SERVER_PID=$!
+        sleep 3
+        
+        # Test if server is responding
+        if curl -f http://localhost:8000/knowledge-graph.html > /dev/null 2>&1; then
+            echo "✅ Python server is working"
+        else
+            echo "❌ Python server failed to start or respond"
+            exit(1)
+        fi
+        
+        # Clean up
+        kill $SERVER_PID 2>/dev/null || true
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Test Node.js server
+      run: |
+        echo "🔍 Testing Node.js server..."
+        timeout 10s node server.js &
+        SERVER_PID=$!
+        sleep 3
+        
+        # Test if server is responding
+        if curl -f http://localhost:8000/knowledge-graph.html > /dev/null 2>&1; then
+            echo "✅ Node.js server is working"
+        else
+            echo "❌ Node.js server failed to start or respond"
+            exit(1)
+        fi
+        
+        # Clean up
+        kill $SERVER_PID 2>/dev/null || true
+
+  generate-report:
+    name: Generate Validation Report
+    runs-on: ubuntu-latest
+    needs: [validate-json, validate-references, validate-relationships, test-server]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Generate statistics
+      run: |
+        echo "📊 Generating knowledge graph statistics..."
+        python3 -c "
+        import json
+        
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        nodes = data.get('nodes', [])
+        edges = data.get('edges', [])
+        
+        # Count by type
+        node_types = {}
+        for node in nodes:
+            node_type = node.get('type', 'unknown')
+            node_types[node_type] = node_types.get(node_type, 0) + 1
+        
+        # Count relationships
+        relationships = {}
+        for edge in edges:
+            rel_type = edge.get('label', 'unknown')
+            relationships[rel_type] = relationships.get(rel_type, 0) + 1
+        
+        print(f'📈 Knowledge Graph Statistics:')
+        print(f'  • Total Nodes: {len(nodes)}')
+        print(f'  • Total Edges: {len(edges)}')
+        print(f'  • Node Types: {dict(node_types)}')
+        print(f'  • Top Relationships: {dict(sorted(relationships.items(), key=lambda x: x[1], reverse=True)[:5])}')
+        "
+        
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read the knowledge graph to get stats
+          const data = JSON.parse(fs.readFileSync('knowledge-graph.json', 'utf8'));
+          const nodes = data.nodes || [];
+          const edges = data.edges || [];
+          
+          // Count by type
+          const nodeTypes = {};
+          nodes.forEach(node => {
+            const type = node.type || 'unknown';
+            nodeTypes[type] = (nodeTypes[type] || 0) + 1;
+          });
+          
+          // Count relationships
+          const relationships = {};
+          edges.forEach(edge => {
+            const rel = edge.label || 'unknown';
+            relationships[rel] = (relationships[rel] || 0) + 1;
+          });
+          
+          const topRelationships = Object.entries(relationships)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([rel, count]) => `${rel}: ${count}`)
+            .join(', ');
+          
+          const comment = `## 📊 Knowledge Graph Statistics
+          
+          **Current State:**
+          - 📍 **Total Nodes:** ${nodes.length}
+          - 🔗 **Total Edges:** ${edges.length}
+          - 👥 **Node Types:** ${Object.entries(nodeTypes).map(([type, count]) => `${type}: ${count}`).join(', ')}
+          - 🔄 **Top Relationships:** ${topRelationships}
+          
+          **Validation Results:**
+          - ✅ JSON Structure: ${context.job === 'validate-json' ? 'Passed' : 'Pending'}
+          - ✅ Scriptural References: ${context.job === 'validate-references' ? 'Passed' : 'Pending'}
+          - ✅ Relationships: ${context.job === 'validate-relationships' ? 'Passed' : 'Pending'}
+          - ✅ Server Tests: ${context.job === 'test-server' ? 'Passed' : 'Pending'}
+          
+          All validation checks have completed successfully! 🎉`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

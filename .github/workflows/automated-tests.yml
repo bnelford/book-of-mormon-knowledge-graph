@@ -1,0 +1,368 @@
+name: Automated Tests
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  test-validation-script:
+    name: Test Validation Script
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Test validation script with valid data
+      run: |
+        echo "🔍 Testing validation script with current data..."
+        python3 validate.py
+        
+    - name: Test validation script with invalid data
+      run: |
+        echo "🔍 Testing validation script with invalid data..."
+        
+        # Create a temporary invalid JSON file
+        cat > test-invalid.json << 'EOF'
+        {
+          "nodes": [
+            {
+              "id": "test_node",
+              "label": "Test Node",
+              "type": "person"
+            }
+          ],
+          "edges": [
+            {
+              "from": "test_node",
+              "to": "nonexistent_node",
+              "label": "test_relationship"
+            }
+          ]
+        }
+        EOF
+        
+        # Test that validation fails with invalid data
+        if python3 validate.py test-invalid.json; then
+          echo "❌ Validation should have failed with invalid data"
+          exit 1
+        else
+          echo "✅ Validation correctly failed with invalid data"
+        fi
+        
+        # Clean up
+        rm test-invalid.json
+
+  test-server-functionality:
+    name: Test Server Functionality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Test Python server
+      run: |
+        echo "🔍 Testing Python server functionality..."
+        
+        # Start server in background
+        python3 server.py &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 5
+        
+        # Test endpoints
+        echo "Testing main page..."
+        if curl -f -s http://localhost:8000/knowledge-graph.html > /dev/null; then
+          echo "✅ Main page loads successfully"
+        else
+          echo "❌ Main page failed to load"
+          exit 1
+        fi
+        
+        echo "Testing JSON data endpoint..."
+        if curl -f -s http://localhost:8000/knowledge-graph.json > /dev/null; then
+          echo "✅ JSON data loads successfully"
+        else
+          echo "❌ JSON data failed to load"
+          exit 1
+        fi
+        
+        echo "Testing CORS headers..."
+        CORS_HEADER=$(curl -s -I http://localhost:8000/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
+        if [ -n "$CORS_HEADER" ]; then
+          echo "✅ CORS headers are present"
+        else
+          echo "❌ CORS headers are missing"
+          exit 1
+        fi
+        
+        # Clean up
+        kill $SERVER_PID 2>/dev/null || true
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Test Node.js server
+      run: |
+        echo "🔍 Testing Node.js server functionality..."
+        
+        # Start server in background
+        node server.js &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 5
+        
+        # Test endpoints
+        echo "Testing main page..."
+        if curl -f -s http://localhost:8000/knowledge-graph.html > /dev/null; then
+          echo "✅ Main page loads successfully"
+        else
+          echo "❌ Main page failed to load"
+          exit 1
+        fi
+        
+        echo "Testing JSON data endpoint..."
+        if curl -f -s http://localhost:8000/knowledge-graph.json > /dev/null; then
+          echo "✅ JSON data loads successfully"
+        else
+          echo "❌ JSON data failed to load"
+          exit 1
+        fi
+        
+        echo "Testing CORS headers..."
+        CORS_HEADER=$(curl -s -I http://localhost:8000/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
+        if [ -n "$CORS_HEADER" ]; then
+          echo "✅ CORS headers are present"
+        else
+          echo "❌ CORS headers are missing"
+          exit 1
+        fi
+        
+        # Clean up
+        kill $SERVER_PID 2>/dev/null || true
+
+  test-data-integrity:
+    name: Test Data Integrity
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Test data consistency
+      run: |
+        echo "🔍 Testing data consistency..."
+        python3 -c "
+        import json
+        
+        # Load the knowledge graph
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        nodes = data.get('nodes', [])
+        edges = data.get('edges', [])
+        
+        # Get all node IDs
+        node_ids = {node['id'] for node in nodes}
+        
+        # Check for orphaned edges
+        orphaned_edges = []
+        for edge in edges:
+            if edge.get('from') not in node_ids:
+                orphaned_edges.append(f'Edge references non-existent source node: {edge.get(\"from\")}')
+            if edge.get('to') not in node_ids:
+                orphaned_edges.append(f'Edge references non-existent target node: {edge.get(\"to\")}')
+        
+        if orphaned_edges:
+            print('❌ Found orphaned edges:')
+            for edge in orphaned_edges:
+                print(f'  • {edge}')
+            exit(1)
+        else:
+            print('✅ No orphaned edges found')
+        
+        # Check for duplicate node IDs
+        node_id_counts = {}
+        for node in nodes:
+            node_id = node.get('id')
+            node_id_counts[node_id] = node_id_counts.get(node_id, 0) + 1
+        
+        duplicates = [node_id for node_id, count in node_id_counts.items() if count > 1]
+        if duplicates:
+            print('❌ Found duplicate node IDs:')
+            for node_id in duplicates:
+                print(f'  • {node_id}')
+            exit(1)
+        else:
+            print('✅ No duplicate node IDs found')
+        
+        # Check for nodes without references
+        nodes_without_refs = [node for node in nodes if not node.get('references')]
+        if nodes_without_refs:
+            print(f'⚠️  Found {len(nodes_without_refs)} nodes without references:')
+            for node in nodes_without_refs[:5]:  # Show first 5
+                print(f'  • {node.get(\"id\")}')
+            if len(nodes_without_refs) > 5:
+                print(f'  ... and {len(nodes_without_refs) - 5} more')
+        else:
+            print('✅ All nodes have references')
+        
+        # Check for edges without references
+        edges_without_refs = [edge for edge in edges if not edge.get('references')]
+        if edges_without_refs:
+            print(f'⚠️  Found {len(edges_without_refs)} edges without references:')
+            for edge in edges_without_refs[:5]:  # Show first 5
+                print(f'  • {edge.get(\"from\")} -> {edge.get(\"to\")} ({edge.get(\"label\")})')
+            if len(edges_without_refs) > 5:
+                print(f'  ... and {len(edges_without_refs) - 5} more')
+        else:
+            print('✅ All edges have references')
+        "
+
+  test-browser-compatibility:
+    name: Test Browser Compatibility
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install Playwright
+      run: |
+        python -m pip install playwright
+        playwright install chromium
+        
+    - name: Test with Playwright
+      run: |
+        echo "🔍 Testing browser compatibility..."
+        python3 -c "
+        from playwright.sync_api import sync_playwright
+        import time
+        
+        with sync_playwright() as p:
+            # Test with Chromium
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            
+            # Start server in background
+            import subprocess
+            import os
+            server = subprocess.Popen(['python3', 'server.py'], 
+                                    stdout=subprocess.DEVNULL, 
+                                    stderr=subprocess.DEVNULL)
+            
+            try:
+                # Wait for server to start
+                time.sleep(5)
+                
+                # Navigate to the page
+                page.goto('http://localhost:8000/knowledge-graph.html')
+                
+                # Wait for page to load
+                page.wait_for_load_state('networkidle')
+                
+                # Check if the network visualization loaded
+                network_element = page.query_selector('#mynetwork')
+                if network_element:
+                    print('✅ Network visualization element found')
+                else:
+                    print('❌ Network visualization element not found')
+                    exit(1)
+                
+                # Check if search functionality works
+                search_input = page.query_selector('#searchInput')
+                if search_input:
+                    print('✅ Search input found')
+                else:
+                    print('❌ Search input not found')
+                    exit(1)
+                
+                # Check if details panel exists
+                details_panel = page.query_selector('#detailsContent')
+                if details_panel:
+                    print('✅ Details panel found')
+                else:
+                    print('❌ Details panel not found')
+                    exit(1)
+                
+                print('✅ Browser compatibility test passed')
+                
+            finally:
+                browser.close()
+                server.terminate()
+        "
+
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Test load times
+      run: |
+        echo "🔍 Testing performance..."
+        
+        # Start server
+        python3 server.py &
+        SERVER_PID=$!
+        sleep 5
+        
+        # Test load times
+        echo "Testing HTML load time..."
+        HTML_TIME=$(curl -w "%{time_total}" -s -o /dev/null http://localhost:8000/knowledge-graph.html)
+        echo "HTML load time: ${HTML_TIME}s"
+        
+        if (( $(echo "$HTML_TIME > 5.0" | bc -l) )); then
+          echo "❌ HTML load time too slow: ${HTML_TIME}s (max 5s)"
+          exit 1
+        else
+          echo "✅ HTML load time acceptable: ${HTML_TIME}s"
+        fi
+        
+        echo "Testing JSON load time..."
+        JSON_TIME=$(curl -w "%{time_total}" -s -o /dev/null http://localhost:8000/knowledge-graph.json)
+        echo "JSON load time: ${JSON_TIME}s"
+        
+        if (( $(echo "$JSON_TIME > 2.0" | bc -l) )); then
+          echo "❌ JSON load time too slow: ${JSON_TIME}s (max 2s)"
+          exit 1
+        else
+          echo "✅ JSON load time acceptable: ${JSON_TIME}s"
+        fi
+        
+        # Clean up
+        kill $SERVER_PID 2>/dev/null || true

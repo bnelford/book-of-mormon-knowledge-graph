@@ -15,10 +15,10 @@
 
 <!-- PROJECT LOGO -->
 <br />
-<p align="center">
-  <a href="https://github.com/bnelford/book-of-mormon-knowledge-graph">
-    <img src="favicon.ico" alt="Logo" width="80" height="80">
-  </a>
+  <p align="center">
+    <a href="https://github.com/bnelford/book-of-mormon-knowledge-graph">
+      <img src="images/header.png" alt="Book of Mormon Knowledge Graph" width="500" height="80">
+    </a>
 
   <h3 align="center">Book of Mormon Knowledge Graph</h3>
 
@@ -68,6 +68,12 @@
 
 The Book of Mormon Knowledge Graph is an interactive web application that visualizes the complex relationships between people, places, groups, and events mentioned in the Book of Mormon. This project combines modern web technologies with scriptural scholarship to create an engaging exploration tool.
 
+<p align="center">
+  <img src="images/screenshot.png" alt="Book of Mormon Knowledge Graph Screenshot" width="800">
+  <br>
+  <em>Interactive network visualization showing the relationships between Book of Mormon entities</em>
+</p>
+
 ### Key Features
 
 - **Interactive Network Visualization**: Explore entities and their relationships through an intuitive graph interface
@@ -77,6 +83,8 @@ The Book of Mormon Knowledge Graph is an interactive web application that visual
 - **Search Functionality**: Real-time search across all entities
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **AI-Assisted Contributions**: Tools and templates for easy expansion using AI
+- **Automated Quality Assurance**: GitHub Actions workflows validate all contributions
+- **Comprehensive Testing**: Automated tests for data integrity, browser compatibility, and performance
 
 ### Built With
 
@@ -345,6 +353,18 @@ For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+### Automated Quality Assurance
+
+This project uses GitHub Actions workflows to ensure code quality and data integrity:
+
+- **Validation Workflows**: Automatically validate JSON structure, scriptural references, and relationships
+- **Code Quality Checks**: Lint Python and JavaScript code, validate HTML structure
+- **Security Scanning**: Check for vulnerabilities and security issues
+- **Performance Testing**: Ensure the application loads quickly and works across browsers
+- **Dependency Monitoring**: Track external dependencies and check for updates
+
+All pull requests must pass these automated checks before they can be merged.
 
 <!-- CONTACT -->
 ## Contact

@@ -1,0 +1,296 @@
+name: Maintenance and Updates
+
+on:
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  check-dependencies:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Check Python dependencies
+      run: |
+        echo "🔍 Checking Python dependencies..."
+        python -m pip install --upgrade pip
+        pip install safety
+        
+        # Check for known vulnerabilities
+        safety check || {
+          echo "⚠️  Known vulnerabilities found in Python dependencies"
+          echo "Consider updating dependencies or checking for security patches"
+        }
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Check Node.js dependencies
+      run: |
+        echo "🔍 Checking Node.js dependencies..."
+        
+        # Check if package.json exists and has dependencies
+        if [ -f "package.json" ]; then
+          npm audit || {
+            echo "⚠️  Known vulnerabilities found in Node.js dependencies"
+            echo "Consider running 'npm audit fix' to resolve issues"
+          }
+        else
+          echo "ℹ️  No package.json found - using CDN dependencies only"
+        fi
+
+  check-external-dependencies:
+    name: Check External Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check CDN availability
+      run: |
+        echo "🔍 Checking external CDN dependencies..."
+        
+        # Check unpkg.com (Vis.js)
+        if curl -f -s --max-time 10 https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js > /dev/null; then
+          echo "✅ unpkg.com (Vis.js) is accessible"
+        else
+          echo "❌ unpkg.com (Vis.js) is not accessible"
+          exit 1
+        fi
+        
+        # Check Google Fonts
+        if curl -f -s --max-time 10 https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap > /dev/null; then
+          echo "✅ Google Fonts is accessible"
+        else
+          echo "❌ Google Fonts is not accessible"
+          exit 1
+        fi
+        
+        # Check Church website
+        if curl -f -s --max-time 10 https://www.churchofjesuschrist.org/study/scriptures/bofm > /dev/null; then
+          echo "✅ Church website is accessible"
+        else
+          echo "❌ Church website is not accessible"
+          exit 1
+        fi
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Update statistics in README
+      run: |
+        echo "🔍 Updating documentation statistics..."
+        python3 -c "
+        import json
+        from datetime import datetime
+        
+        # Load the knowledge graph
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        nodes = data.get('nodes', [])
+        edges = data.get('edges', [])
+        
+        # Count by type
+        node_types = {}
+        for node in nodes:
+            node_type = node.get('type', 'unknown')
+            node_types[node_type] = node_types.get(node_type, 0) + 1
+        
+        # Count relationships
+        relationships = {}
+        for edge in edges:
+            rel_type = edge.get('label', 'unknown')
+            relationships[rel_type] = relationships.get(rel_type, 0) + 1
+        
+        # Generate statistics
+        stats = f'''
+        ## 📊 Current Statistics (Updated {datetime.now().strftime('%Y-%m-%d')})
+        
+        - **Total Nodes:** {len(nodes)}
+        - **Total Edges:** {len(edges)}
+        - **Node Types:** {dict(node_types)}
+        - **Top Relationships:** {dict(sorted(relationships.items(), key=lambda x: x[1], reverse=True)[:5])}
+        '''
+        
+        print('📈 Generated updated statistics:')
+        print(stats)
+        "
+        
+    - name: Check for broken links
+      run: |
+        echo "🔍 Checking for broken links in documentation..."
+        
+        # Extract URLs from README and CONTRIBUTING files
+        grep -o 'https://[^)]*' README.md CONTRIBUTING.md | while read url; do
+          if curl -f -s --max-time 10 "$url" > /dev/null; then
+            echo "✅ $url is accessible"
+          else
+            echo "❌ $url is not accessible"
+          fi
+        done
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Run security audit
+      run: |
+        echo "🔍 Running security audit..."
+        
+        # Check for sensitive information
+        if grep -r -i "password\|secret\|key\|token" . --exclude-dir=.git --exclude="*.md" --exclude="*.yml"; then
+          echo "⚠️  Potential sensitive information found in code"
+          echo "Please review and remove any hardcoded secrets"
+        else
+          echo "✅ No sensitive information found in code"
+        fi
+        
+        # Check file permissions
+        echo "🔍 Checking file permissions..."
+        find . -type f -name "*.py" -o -name "*.js" -o -name "*.html" | while read file; do
+          perms=$(stat -c "%a" "$file")
+          if [ "$perms" != "644" ] && [ "$perms" != "755" ]; then
+            echo "⚠️  Unusual permissions on $file: $perms"
+          fi
+        done
+        
+        echo "✅ File permissions check completed"
+
+  create-maintenance-report:
+    name: Create Maintenance Report
+    runs-on: ubuntu-latest
+    needs: [check-dependencies, check-external-dependencies, update-documentation, security-audit]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Generate maintenance report
+      run: |
+        echo "📋 Generating maintenance report..."
+        python3 -c "
+        import json
+        from datetime import datetime
+        
+        # Load the knowledge graph
+        with open('knowledge-graph.json', 'r') as f:
+            data = json.load(f)
+        
+        nodes = data.get('nodes', [])
+        edges = data.get('edges', [])
+        
+        # Count by type
+        node_types = {}
+        for node in nodes:
+            node_type = node.get('type', 'unknown')
+            node_types[node_type] = node_types.get(node_type, 0) + 1
+        
+        # Count relationships
+        relationships = {}
+        for edge in edges:
+            rel_type = edge.get('label', 'unknown')
+            relationships[rel_type] = relationships.get(rel_type, 0) + 1
+        
+        # Generate report
+        report = f'''
+        # 🔧 Maintenance Report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+        
+        ## 📊 Project Statistics
+        - **Total Nodes:** {len(nodes)}
+        - **Total Edges:** {len(edges)}
+        - **Node Types:** {dict(node_types)}
+        - **Relationship Types:** {len(relationships)}
+        
+        ## 🔍 Maintenance Checks
+        - ✅ Dependencies Check: {'Passed' if '${{ needs.check-dependencies.result }}' == 'success' else 'Failed'}
+        - ✅ External Dependencies: {'Passed' if '${{ needs.check-external-dependencies.result }}' == 'success' else 'Failed'}
+        - ✅ Documentation Update: {'Passed' if '${{ needs.update-documentation.result }}' == 'success' else 'Failed'}
+        - ✅ Security Audit: {'Passed' if '${{ needs.security-audit.result }}' == 'success' else 'Failed'}
+        
+        ## 📈 Growth Metrics
+        - **Nodes Added This Week:** [To be calculated]
+        - **Edges Added This Week:** [To be calculated]
+        - **New Contributors:** [To be calculated]
+        
+        ## 🎯 Recommendations
+        - Continue monitoring external dependencies
+        - Regular security audits recommended
+        - Consider adding more automated tests
+        - Update documentation as project grows
+        '''
+        
+        print(report)
+        "
+        
+    - name: Create issue if maintenance failed
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🔧 Maintenance Check Failed - ${new Date().toISOString().split('T')[0]}`;
+          const body = `
+          ## Maintenance Check Failed
+          
+          One or more maintenance checks have failed. Please review the workflow logs and address any issues.
+          
+          **Failed Jobs:**
+          - Dependencies Check: ${{ needs.check-dependencies.result }}
+          - External Dependencies: ${{ needs.check-external-dependencies.result }}
+          - Documentation Update: ${{ needs.update-documentation.result }}
+          - Security Audit: ${{ needs.security-audit.result }}
+          
+          **Next Steps:**
+          1. Review the workflow logs for specific error details
+          2. Address any identified issues
+          3. Re-run the maintenance workflow
+          4. Close this issue once resolved
+          
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['maintenance', 'bug']
+          });

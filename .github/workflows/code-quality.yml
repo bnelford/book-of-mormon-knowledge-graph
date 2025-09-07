@@ -1,0 +1,237 @@
+name: Code Quality Checks
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  lint-python:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'validate.py') || contains(github.event.head_commit.modified, 'server.py')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+        
+    - name: Run Black (code formatting check)
+      run: |
+        echo "🔍 Checking Python code formatting with Black..."
+        black --check --diff validate.py server.py || {
+          echo "❌ Code formatting issues found. Run 'black validate.py server.py' to fix."
+          exit 1
+        }
+        echo "✅ Code formatting is correct"
+        
+    - name: Run isort (import sorting check)
+      run: |
+        echo "🔍 Checking import sorting with isort..."
+        isort --check-only --diff validate.py server.py || {
+          echo "❌ Import sorting issues found. Run 'isort validate.py server.py' to fix."
+          exit 1
+        }
+        echo "✅ Import sorting is correct"
+        
+    - name: Run flake8 (linting)
+      run: |
+        echo "🔍 Running flake8 linting..."
+        flake8 validate.py server.py --max-line-length=100 --ignore=E203,W503 || {
+          echo "❌ Linting issues found."
+          exit 1
+        }
+        echo "✅ No linting issues found"
+
+  lint-javascript:
+    name: Lint JavaScript Code
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'server.js') || contains(github.event.head_commit.modified, 'knowledge-graph.html')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install ESLint
+      run: |
+        npm install -g eslint
+        
+    - name: Create ESLint config
+      run: |
+        cat > .eslintrc.json << 'EOF'
+        {
+          "env": {
+            "browser": true,
+            "es2021": true,
+            "node": true
+          },
+          "extends": ["eslint:recommended"],
+          "parserOptions": {
+            "ecmaVersion": "latest",
+            "sourceType": "module"
+          },
+          "rules": {
+            "no-unused-vars": "warn",
+            "no-console": "off",
+            "no-undef": "error"
+          }
+        }
+        EOF
+        
+    - name: Run ESLint on server.js
+      run: |
+        echo "🔍 Running ESLint on server.js..."
+        eslint server.js || {
+          echo "❌ JavaScript linting issues found in server.js"
+          exit 1
+        }
+        echo "✅ No linting issues found in server.js"
+
+  validate-html:
+    name: Validate HTML
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'knowledge-graph.html')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install HTML validator
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget -q https://github.com/validator/validator/releases/latest/download/vnu.linux.zip
+        unzip -q vnu.linux.zip
+        chmod +x vnu-runtime-image/bin/vnu
+        
+    - name: Validate HTML
+      run: |
+        echo "🔍 Validating HTML structure..."
+        ./vnu-runtime-image/bin/vnu knowledge-graph.html || {
+          echo "❌ HTML validation issues found"
+          exit 1
+        }
+        echo "✅ HTML is valid"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+        
+    - name: Run Bandit security scan
+      run: |
+        echo "🔍 Running security scan with Bandit..."
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -f txt || {
+          echo "❌ Security issues found"
+          exit 1
+        }
+        echo "✅ No security issues found"
+        
+    - name: Check for known vulnerabilities
+      run: |
+        echo "🔍 Checking for known vulnerabilities..."
+        safety check || {
+          echo "❌ Known vulnerabilities found"
+          exit 1
+        }
+        echo "✅ No known vulnerabilities found"
+
+  file-size-check:
+    name: Check File Sizes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check file sizes
+      run: |
+        echo "🔍 Checking file sizes..."
+        
+        # Check knowledge-graph.json size
+        JSON_SIZE=$(stat -c%s knowledge-graph.json)
+        JSON_SIZE_MB=$((JSON_SIZE / 1024 / 1024))
+        
+        if [ $JSON_SIZE_MB -gt 10 ]; then
+          echo "❌ knowledge-graph.json is too large: ${JSON_SIZE_MB}MB (max 10MB)"
+          exit 1
+        else
+          echo "✅ knowledge-graph.json size: ${JSON_SIZE_MB}MB"
+        fi
+        
+        # Check knowledge-graph.html size
+        HTML_SIZE=$(stat -c%s knowledge-graph.html)
+        HTML_SIZE_KB=$((HTML_SIZE / 1024))
+        
+        if [ $HTML_SIZE_KB -gt 1000 ]; then
+          echo "❌ knowledge-graph.html is too large: ${HTML_SIZE_KB}KB (max 1000KB)"
+          exit 1
+        else
+          echo "✅ knowledge-graph.html size: ${HTML_SIZE_KB}KB"
+        fi
+
+  dependency-check:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check for external dependencies
+      run: |
+        echo "🔍 Checking for external dependencies..."
+        
+        # Check HTML for external CDN links
+        if grep -q "https://unpkg.com" knowledge-graph.html; then
+          echo "✅ Found expected CDN dependency: unpkg.com"
+        else
+          echo "❌ Missing expected CDN dependency"
+          exit 1
+        fi
+        
+        if grep -q "https://fonts.googleapis.com" knowledge-graph.html; then
+          echo "✅ Found expected CDN dependency: Google Fonts"
+        else
+          echo "❌ Missing expected CDN dependency"
+          exit 1
+        fi
+        
+        # Check for any other external dependencies
+        EXTERNAL_DEPS=$(grep -o 'https://[^"]*' knowledge-graph.html | grep -v 'unpkg.com\|fonts.googleapis.com\|churchofjesuschrist.org' || true)
+        
+        if [ -n "$EXTERNAL_DEPS" ]; then
+          echo "⚠️  Found additional external dependencies:"
+          echo "$EXTERNAL_DEPS"
+        else
+          echo "✅ No unexpected external dependencies found"
+        fi
