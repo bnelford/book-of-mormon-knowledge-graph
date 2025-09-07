@@ -125,40 +125,40 @@ jobs:
     - name: Test Node.js server
       run: |
         echo "🔍 Testing Node.js server functionality..."
-        
-        # Start server in background
-        node server.js &
+
+        # Start server in background on port 8001
+        node server.js --port=8001 &
         SERVER_PID=$!
-        
+
         # Wait for server to start
         sleep 5
-        
+
         # Test endpoints
         echo "Testing main page..."
-        if curl -f -s http://localhost:8000/knowledge-graph.html > /dev/null; then
+        if curl -f -s http://localhost:8001/knowledge-graph.html > /dev/null; then
           echo "✅ Main page loads successfully"
         else
           echo "❌ Main page failed to load"
           exit 1
         fi
-        
+
         echo "Testing JSON data endpoint..."
-        if curl -f -s http://localhost:8000/knowledge-graph.json > /dev/null; then
+        if curl -f -s http://localhost:8001/knowledge-graph.json > /dev/null; then
           echo "✅ JSON data loads successfully"
         else
           echo "❌ JSON data failed to load"
           exit 1
         fi
-        
+
         echo "Testing CORS headers..."
-        CORS_HEADER=$(curl -s -I http://localhost:8000/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
+        CORS_HEADER=$(curl -s -I http://localhost:8001/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
         if [ -n "$CORS_HEADER" ]; then
           echo "✅ CORS headers are present"
         else
           echo "❌ CORS headers are missing"
           exit 1
         fi
-        
+
         # Clean up
         kill $SERVER_PID 2>/dev/null || true
 
