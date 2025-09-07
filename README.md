@@ -99,6 +99,11 @@ The Book of Mormon Knowledge Graph is an interactive web application that visual
 <!-- GETTING STARTED -->
 ## Getting Started
 
+### 🌐 Live Demo
+
+**Try it now!** The Book of Mormon Knowledge Graph is deployed and available at:
+**[https://bnelford.github.io/book-of-mormon-knowledge-graph/](https://bnelford.github.io/book-of-mormon-knowledge-graph/)**
+
 To get a local copy up and running, follow these simple steps:
 
 ### Prerequisites
@@ -365,6 +370,32 @@ This project uses GitHub Actions workflows to ensure code quality and data integ
 - **Dependency Monitoring**: Track external dependencies and check for updates
 
 All pull requests must pass these automated checks before they can be merged.
+
+## 🚀 Deployment
+
+This project is automatically deployed to GitHub Pages using GitHub Actions. Every push to the main branch triggers an automated deployment.
+
+### Deployment Features
+
+- **Automatic Deployment**: Every push to main branch deploys to GitHub Pages
+- **Validation**: All deployments are validated before going live
+- **Custom Domain**: Can be configured with a custom domain
+- **HTTPS**: Automatically secured with SSL certificates
+- **CDN**: Served through GitHub's global CDN for fast loading
+
+### Manual Deployment
+
+You can also manually trigger a deployment:
+
+1. Go to the **Actions** tab in your GitHub repository
+2. Select the **Deploy to GitHub Pages** workflow
+3. Click **Run workflow**
+4. Choose the branch and click **Run workflow**
+
+### Deployment URL
+
+Once deployed, your knowledge graph will be available at:
+`https://[your-username].github.io/book-of-mormon-knowledge-graph/`
 
 <!-- CONTACT -->
 ## Contact

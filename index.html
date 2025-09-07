@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book of Mormon Knowledge Graph</title>
+    <meta name="description" content="Interactive visualization of the interconnected people, places, groups, and events from the Book of Mormon">
+    <meta name="keywords" content="Book of Mormon, knowledge graph, visualization, scripture, LDS, Church of Jesus Christ">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bnelford.github.io/book-of-mormon-knowledge-graph/">
+    <meta property="og:title" content="Book of Mormon Knowledge Graph">
+    <meta property="og:description" content="Interactive visualization of the interconnected people, places, groups, and events from the Book of Mormon">
+    <meta property="og:image" content="https://bnelford.github.io/book-of-mormon-knowledge-graph/images/screenshot.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bnelford.github.io/book-of-mormon-knowledge-graph/">
+    <meta property="twitter:title" content="Book of Mormon Knowledge Graph">
+    <meta property="twitter:description" content="Interactive visualization of the interconnected people, places, groups, and events from the Book of Mormon">
+    <meta property="twitter:image" content="https://bnelford.github.io/book-of-mormon-knowledge-graph/images/screenshot.png">
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 2rem;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #4a5568;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 1rem 0;
+            color: #4a5568;
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 1rem;
+            color: #667eea;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <img src="images/header.png" alt="Book of Mormon Knowledge Graph" class="logo">
+        
+        <h1>Book of Mormon Knowledge Graph</h1>
+        
+        <p class="subtitle">
+            Explore the interconnected people, places, groups, and events from the Book of Mormon through an interactive network visualization. Discover relationships and connections that bring the sacred text to life.
+        </p>
+        
+        <a href="knowledge-graph.html" class="cta-button">
+            🚀 Launch Knowledge Graph
+        </a>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">🔍</span>
+                <span>Interactive search and filtering</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🔗</span>
+                <span>Color-coded relationships</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📖</span>
+                <span>Direct links to scripture</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <span>Responsive design</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>
+                Built with ❤️ for the Book of Mormon community<br>
+                <a href="https://github.com/bnelford/book-of-mormon-knowledge-graph">View on GitHub</a> • 
+                <a href="https://github.com/bnelford/book-of-mormon-knowledge-graph/blob/main/CONTRIBUTING.md">Contribute</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
