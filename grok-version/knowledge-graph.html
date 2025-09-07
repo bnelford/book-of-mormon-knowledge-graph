@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book of Mormon Knowledge Graph</title>
+  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style type="text/css">
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .main-container {
+      display: flex;
+      height: 100vh;
+      position: relative;
+    }
+
+    .graph-container {
+      flex: 1;
+      position: relative;
+      margin: 20px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      background: white;
+    }
+
+    #mynetwork {
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+    }
+
+    .sidebar {
+      width: 350px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .sidebar-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-header p {
+      font-size: 14px;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .search-section {
+      padding: 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .search-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #2d3748;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      background: white;
+    }
+
+    #searchInput:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    #searchResults {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      margin-top: 12px;
+      background: white;
+    }
+
+    #searchResults div {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f7fafc;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    #searchResults div:last-child {
+      border-bottom: none;
+    }
+
+    #searchResults div:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    .details-section {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .details-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #2d3748;
+    }
+
+    #detailsContent {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4a5568;
+      background: #f7fafc;
+      padding: 16px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #2d3748;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #4a5568;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .title-overlay {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 16px 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .title-overlay h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+      text-align: center;
+      margin: 0;
+    }
+
+    .title-overlay p {
+      font-size: 14px;
+      color: #718096;
+      text-align: center;
+      margin: 4px 0 0 0;
+      font-weight: 400;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: 40vh;
+        order: 2;
+      }
+      
+      .graph-container {
+        height: 60vh;
+        margin: 10px;
+      }
+      
+      .legend {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        padding: 12px;
+      }
+      
+      .title-overlay {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        padding: 12px 20px;
+      }
+      
+      .title-overlay h1 {
+        font-size: 18px;
+      }
+    }
+
+    /* Animation for smooth transitions */
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 16px;
+      color: #718096;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+<div class="main-container">
+  <div class="graph-container">
+    <div id="mynetwork"></div>
+    
+    <div class="title-overlay">
+      <h1>Book of Mormon Knowledge Graph</h1>
+      <p>Explore the interconnected world of people, places, and events</p>
+    </div>
+    
+    <div class="legend">
+      <h4>Node Types</h4>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #FF5733;"></div>
+        <span>Person</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #33FF57;"></div>
+        <span>Group</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #3357FF;"></div>
+        <span>Place</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #FFC300;"></div>
+        <span>Event</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>Knowledge Graph</h1>
+      <p>Interactive exploration of Book of Mormon entities</p>
+    </div>
+    
+    <div class="search-section">
+      <h3>Search</h3>
+      <input type="text" id="searchInput" placeholder="Search for people, places, events...">
+      <div id="searchResults"></div>
+    </div>
+    
+    <div class="details-section">
+      <h3>Details</h3>
+      <div id="detailsContent"><div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  // Load JSON data from external file
+  fetch('knowledge-graph.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to load knowledge-graph.json: ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(graphData => {
+      // Validate JSON structure
+      if (!graphData.nodes || !graphData.edges) {
+        throw new Error('Invalid JSON structure: nodes or edges missing');
+      }
+      // Enhance nodes with additional details
+      graphData.nodes = graphData.nodes.map(node => ({
+        ...node,
+        title: `ID: ${node.id}\nType: ${node.type}\nLabel: ${node.label}`
+      }));
+
+      // Add color coding for nodes based on their type
+      var colorByType = {
+        person: '#FF5733',
+        group: '#33FF57',
+        place: '#3357FF',
+        event: '#FFC300'
+      };
+
+      graphData.nodes = graphData.nodes.map(node => ({
+        ...node,
+        color: colorByType[node.type] || '#CCCCCC' // Default color for unknown types
+      }));
+
+      // Initialize vis.js network
+      var container = document.getElementById('mynetwork');
+      if (!container) {
+        throw new Error('Container element #mynetwork not found');
+      }
+      var data = {
+        nodes: new vis.DataSet(graphData.nodes),
+        edges: new vis.DataSet(graphData.edges)
+      };
+      var options = {
+        nodes: {
+          shape: 'dot',
+          size: 20,
+          font: { 
+            size: 14,
+            color: '#2d3748',
+            strokeWidth: 2,
+            strokeColor: '#ffffff'
+          },
+          title: function(node) {
+            return node.references ? node.references.join(', ') : 'No references available';
+          },
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          shadow: {
+            enabled: true,
+            color: 'rgba(0, 0, 0, 0.2)',
+            size: 8,
+            x: 2,
+            y: 2
+          }
+        },
+        edges: {
+          arrows: 'to',
+          font: { 
+            size: 12,
+            color: '#4a5568',
+            strokeWidth: 2,
+            strokeColor: '#ffffff'
+          },
+          color: { 
+            color: '#a0aec0',
+            highlight: '#667eea',
+            hover: '#667eea'
+          },
+          smooth: {
+            type: 'continuous',
+            forceDirection: 'none',
+            roundness: 0.4
+          },
+          width: 2,
+          shadow: {
+            enabled: true,
+            color: 'rgba(0, 0, 0, 0.1)',
+            size: 4,
+            x: 1,
+            y: 1
+          }
+        },
+        physics: {
+          forceAtlas2Based: {
+            springLength: 120,
+            springConstant: 0.04,
+            damping: 0.09,
+            avoidOverlap: 0.5
+          },
+          minVelocity: 0.75,
+          solver: 'forceAtlas2Based',
+          stabilization: {
+            enabled: true,
+            iterations: 100,
+            updateInterval: 25
+          }
+        },
+        interaction: {
+          tooltipDelay: 300,
+          hover: true,
+          hoverConnectedEdges: true,
+          selectConnectedEdges: false
+        },
+        layout: {
+          improvedLayout: true
+        }
+      };
+      var network = new vis.Network(container, data, options);
+
+      // Remove modal logic
+      var detailsPane = document.getElementById("detailsPane");
+      var detailsContent = document.getElementById("detailsContent");
+
+      network.on('hoverNode', function (params) {
+        var nodeId = params.node;
+        var nodeData = graphData.nodes.find(node => node.id === nodeId);
+        if (nodeData) {
+          detailsContent.innerHTML = `
+            <div class="fade-in">
+              <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">${nodeData.label}</h4>
+              <div style="margin-bottom: 8px;">
+                <span style="font-weight: 500; color: #4a5568;">Type:</span> 
+                <span style="color: #667eea; font-weight: 500;">${nodeData.type}</span>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <span style="font-weight: 500; color: #4a5568;">ID:</span> 
+                <span style="color: #718096;">${nodeData.id}</span>
+              </div>
+              <div>
+                <span style="font-weight: 500; color: #4a5568;">References:</span><br>
+                <span style="color: #718096; font-size: 13px;">${nodeData.references ? nodeData.references.join(', ') : 'None available'}</span>
+              </div>
+            </div>`;
+        }
+      });
+
+      network.on('hoverEdge', function (params) {
+        var edgeId = params.edge;
+        var edgeData = graphData.edges.find(edge => edge.id === edgeId);
+        if (edgeData) {
+          detailsContent.innerHTML = `
+            <div class="fade-in">
+              <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">Connection</h4>
+              <div style="margin-bottom: 8px;">
+                <span style="font-weight: 500; color: #4a5568;">From:</span> 
+                <span style="color: #667eea; font-weight: 500;">${edgeData.from}</span>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <span style="font-weight: 500; color: #4a5568;">To:</span> 
+                <span style="color: #667eea; font-weight: 500;">${edgeData.to}</span>
+              </div>
+              <div>
+                <span style="font-weight: 500; color: #4a5568;">Relationship:</span> 
+                <span style="color: #718096;">${edgeData.label || 'Connected'}</span>
+              </div>
+            </div>`;
+        }
+      });
+
+      network.on('blurNode', function () {
+        detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div>';
+      });
+
+      network.on('blurEdge', function () {
+        detailsContent.innerHTML = '<div style="text-align: center; color: #a0aec0; font-style: italic;">Hover over a node or edge to see details here.</div>';
+      });
+
+      // Legend and title are now in the HTML structure
+
+      var searchInput = document.getElementById("searchInput");
+      var searchResults = document.getElementById("searchResults");
+
+      // Add a function to highlight a node
+      function highlightNode(nodeId) {
+        // Reset all nodes to default style
+        graphData.nodes = graphData.nodes.map(node => ({
+          ...node,
+          borderWidth: 2,
+          shadow: false
+        }));
+
+        // Highlight the selected node
+        var selectedNode = graphData.nodes.find(node => node.id === nodeId);
+        if (selectedNode) {
+          selectedNode.borderWidth = 6;
+          selectedNode.shadow = {
+            enabled: true,
+            color: 'rgba(0, 255, 0, 0.8)',
+            size: 15,
+            x: 0,
+            y: 0
+          };
+        }
+
+        // Update the network
+        network.setData({
+          nodes: new vis.DataSet(graphData.nodes),
+          edges: new vis.DataSet(graphData.edges)
+        });
+      }
+
+      searchInput.addEventListener("input", function () {
+        var query = searchInput.value.toLowerCase();
+        searchResults.innerHTML = "";
+
+        if (query) {
+          var results = graphData.nodes.filter(node =>
+            node.label.toLowerCase().includes(query)
+          );
+
+          results.forEach(node => {
+            var resultDiv = document.createElement("div");
+            resultDiv.textContent = node.label;
+            resultDiv.addEventListener("click", function () {
+              // Simulate selecting the node
+              detailsContent.innerHTML = `
+                <div class="fade-in">
+                  <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">${node.label}</h4>
+                  <div style="margin-bottom: 8px;">
+                    <span style="font-weight: 500; color: #4a5568;">Type:</span> 
+                    <span style="color: #667eea; font-weight: 500;">${node.type}</span>
+                  </div>
+                  <div style="margin-bottom: 8px;">
+                    <span style="font-weight: 500; color: #4a5568;">ID:</span> 
+                    <span style="color: #718096;">${node.id}</span>
+                  </div>
+                  <div>
+                    <span style="font-weight: 500; color: #4a5568;">References:</span><br>
+                    <span style="color: #718096; font-size: 13px;">${node.references ? node.references.join(', ') : 'None available'}</span>
+                  </div>
+                </div>`;
+
+              // Highlight the selected node
+              highlightNode(node.id);
+            });
+            searchResults.appendChild(resultDiv);
+          });
+        }
+      });
+    })
+    .catch(error => {
+      console.error('Error initializing graph:', error);
+      document.getElementById('mynetwork').innerHTML = '<p>Error loading graph: ' + error.message + '</p>';
+    });
+</script>
+</body>
+</html>

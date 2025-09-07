@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book of Mormon Knowledge Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    svg {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    .node circle {
+      fill: #69b3a2;
+      stroke: #555;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      fill: none;
+      stroke: #999;
+      stroke-opacity: 0.6;
+    }
+
+    .popup {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <h1>Book of Mormon Knowledge Graph</h1>
+  <svg></svg>
+  <div id="popup" class="popup"></div>
+
+  <script>
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const popup = d3.select("#popup");
+
+    const simulation = d3.forceSimulation()
+      .force("link", d3.forceLink().id(d => d.id))
+      .force("charge", d3.forceManyBody())
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    fetch('/api/data')
+      .then(response => response.json())
+      .then(data => {
+        const links = data.relationships;
+        const nodes = data.entities;
+
+        const link = svg.append("g")
+          .attr("class", "links")
+          .selectAll("line")
+          .data(links)
+          .enter().append("line")
+          .attr("class", "link")
+          .on("click", (event, d) => {
+            popup.style("display", "block")
+              .style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY + 10}px`)
+              .html(`<strong>Relationship:</strong> ${d.description}`);
+          });
+
+        const node = svg.append("g")
+          .attr("class", "nodes")
+          .selectAll("circle")
+          .data(nodes)
+          .enter().append("circle")
+          .attr("r", 5)
+          .on("click", (event, d) => {
+            popup.style("display", "block")
+              .style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY + 10}px`)
+              .html(`<strong>Node:</strong> ${d.name}<br><strong>Description:</strong> ${d.description}`);
+          })
+          .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+        node.append("title")
+          .text(d => d.name);
+
+        simulation
+          .nodes(nodes)
+          .on("tick", ticked);
+
+        simulation.force("link")
+          .links(links);
+
+        function ticked() {
+          link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+          node
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y);
+        }
+
+        function dragstarted(event, d) {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+          d.fx = event.x;
+          d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }
+      });
+
+    svg.on("click", () => {
+      popup.style("display", "none");
+    });
+  </script>
+</body>
+</html>
