@@ -11,6 +11,8 @@ jobs:
     name: Lint Python Code
     runs-on: ubuntu-latest
     if: contains(github.event.head_commit.modified, 'validate.py') || contains(github.event.head_commit.modified, 'server.py')
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -57,6 +59,8 @@ jobs:
     name: Lint JavaScript Code
     runs-on: ubuntu-latest
     if: contains(github.event.head_commit.modified, 'server.js') || contains(github.event.head_commit.modified, 'knowledge-graph.html')
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -106,6 +110,8 @@ jobs:
     name: Validate HTML
     runs-on: ubuntu-latest
     if: contains(github.event.head_commit.modified, 'knowledge-graph.html')
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -131,6 +137,8 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -168,6 +176,8 @@ jobs:
   file-size-check:
     name: Check File Sizes
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -202,6 +212,8 @@ jobs:
   dependency-check:
     name: Check Dependencies
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code

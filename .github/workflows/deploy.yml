@@ -40,34 +40,34 @@ jobs:
       - name: Test servers
         run: |
           echo "🔍 Testing servers before deployment..."
-          
+
           # Test Python server
           timeout 10s python3 server.py &
-          SERVER_PID=$!
+          PYTHON_SERVER_PID=$!
           sleep 3
-          
+
           if curl -f -s http://localhost:8000/knowledge-graph.html > /dev/null; then
             echo "✅ Python server works"
           else
             echo "❌ Python server failed"
             exit 1
           fi
-          
-          kill $SERVER_PID 2>/dev/null || true
-          
+
+          kill $PYTHON_SERVER_PID 2>/dev/null || true
+
           # Test Node.js server
-          timeout 10s node server.js &
-          SERVER_PID=$!
+          timeout 10s node server.js --port=8001 &
+          NODE_SERVER_PID=$!
           sleep 3
-          
-          if curl -f -s http://localhost:8000/knowledge-graph.html > /dev/null; then
+
+          if curl -f -s http://localhost:8001/knowledge-graph.html > /dev/null; then
             echo "✅ Node.js server works"
           else
             echo "❌ Node.js server failed"
             exit 1
           fi
-          
-          kill $SERVER_PID 2>/dev/null || true
+
+          kill $NODE_SERVER_PID 2>/dev/null || true
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -81,7 +81,7 @@ jobs:
   # Deployment job
   deploy:
     environment:
-      name: github-pages
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
@@ -89,3 +89,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+# Ensure other workflows reference the appropriate environments
+# For example, if there are workflows for testing or staging, update them to use "dev" or "prod" environments as needed.

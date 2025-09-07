@@ -10,6 +10,8 @@ jobs:
   test-validation-script:
     name: Test Validation Script
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -63,6 +65,8 @@ jobs:
   test-server-functionality:
     name: Test Server Functionality
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -161,6 +165,8 @@ jobs:
   test-data-integrity:
     name: Test Data Integrity
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -244,6 +250,8 @@ jobs:
   test-browser-compatibility:
     name: Test Browser Compatibility
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -322,6 +330,8 @@ jobs:
   performance-test:
     name: Performance Test
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code

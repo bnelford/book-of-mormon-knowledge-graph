@@ -10,6 +10,8 @@ jobs:
   check-dependencies:
     name: Check Dependencies
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -54,6 +56,8 @@ jobs:
   check-external-dependencies:
     name: Check External Dependencies
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -90,6 +94,8 @@ jobs:
   update-documentation:
     name: Update Documentation
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -156,6 +162,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
@@ -194,6 +202,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-dependencies, check-external-dependencies, update-documentation, security-audit]
     if: always()
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     
     steps:
     - name: Checkout code
