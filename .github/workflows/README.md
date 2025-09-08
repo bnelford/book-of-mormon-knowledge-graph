@@ -133,6 +133,11 @@ Weekly maintenance reports are automatically generated and can be found in:
 - Issues (if maintenance fails)
 - Release notes
 
+## 🌐 Live Deployment
+
+The latest deployment on the **prod** environment is available at:
+[https://bnelford.github.io/book-of-mormon-knowledge-graph/](https://bnelford.github.io/book-of-mormon-knowledge-graph/)
+
 ## 🛠️ Troubleshooting
 
 ### Common Issues

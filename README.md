@@ -99,10 +99,10 @@ The Book of Mormon Knowledge Graph is an interactive web application that visual
 <!-- GETTING STARTED -->
 ## Getting Started
 
-### 🌐 Live Demo
+### 🌐 Live Deployment
 
-**Try it now!** The Book of Mormon Knowledge Graph is deployed and available at:
-**[https://bnelford.github.io/book-of-mormon-knowledge-graph/](https://bnelford.github.io/book-of-mormon-knowledge-graph/)**
+**Access the latest deployment on the prod environment here:**
+[https://bnelford.github.io/book-of-mormon-knowledge-graph/](https://bnelford.github.io/book-of-mormon-knowledge-graph/)
 
 To get a local copy up and running, follow these simple steps:
 
