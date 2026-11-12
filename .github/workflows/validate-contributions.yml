@@ -123,7 +123,7 @@ jobs:
                 issues.append(f'Invalid reference format: {ref}')
                 continue
                 
-            book_chapter, verse = match.groups()
+            book_chapter = match.group(1)
             
             # Check if book is valid
             book_found = False
@@ -238,7 +238,7 @@ jobs:
             echo "✅ Python server is working"
         else
             echo "❌ Python server failed to start or respond"
-            exit(1)
+            exit 1
         fi
         
         # Clean up
@@ -261,7 +261,7 @@ jobs:
             echo "✅ Node.js server is working"
         else
             echo "❌ Node.js server failed to start or respond"
-            exit(1)
+            exit 1
         fi
         
         # Clean up
