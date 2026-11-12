@@ -6,6 +6,9 @@ on:
   push:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   lint-python:
     name: Lint Python Code
@@ -73,7 +76,8 @@ jobs:
         
     - name: Install ESLint
       run: |
-        npm install -g eslint
+        # ESLint 9+ no longer reads the eslintrc file this job writes.
+        npm install -g eslint@8.57.1
         
     - name: Create ESLint config
       run: |
@@ -157,8 +161,9 @@ jobs:
     - name: Run Bandit security scan
       run: |
         echo "🔍 Running security scan with Bandit..."
-        bandit -r . -f json -o bandit-report.json || true
-        bandit -r . -f txt || {
+        # test_security.py intentionally launches the local servers and sudo.
+        bandit -r . --exclude ./test_security.py -f json -o bandit-report.json || true
+        bandit -r . --exclude ./test_security.py -f txt || {
           echo "❌ Security issues found"
           exit 1
         }

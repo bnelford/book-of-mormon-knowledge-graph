@@ -6,6 +6,9 @@ on:
   push:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   test-validation-script:
     name: Test Validation Script
@@ -105,13 +108,22 @@ jobs:
           exit 1
         fi
         
-        echo "Testing CORS headers..."
-        CORS_HEADER=$(curl -s -I http://localhost:8000/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
+        echo "Testing that cross-origin reads are disabled..."
+        CORS_HEADER=$(curl -s -I http://localhost:8000/knowledge-graph.json | grep -i "^access-control-allow-origin:" || true)
         if [ -n "$CORS_HEADER" ]; then
-          echo "✅ CORS headers are present"
-        else
-          echo "❌ CORS headers are missing"
+          echo "❌ Unexpected CORS header: $CORS_HEADER"
           exit 1
+        else
+          echo "✅ No Access-Control-Allow-Origin header"
+        fi
+
+        echo "Testing that .git is not served..."
+        GIT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/.git/config)
+        if [ "$GIT_STATUS" != "403" ]; then
+          echo "❌ /.git/config returned $GIT_STATUS"
+          exit 1
+        else
+          echo "✅ /.git/config is forbidden"
         fi
         
         # Clean up
@@ -150,17 +162,29 @@ jobs:
           exit 1
         fi
 
-        echo "Testing CORS headers..."
-        CORS_HEADER=$(curl -s -I http://localhost:8001/knowledge-graph.json | grep -i "access-control-allow-origin" || echo "")
+        echo "Testing that cross-origin reads are disabled..."
+        CORS_HEADER=$(curl -s -I http://localhost:8001/knowledge-graph.json | grep -i "^access-control-allow-origin:" || true)
         if [ -n "$CORS_HEADER" ]; then
-          echo "✅ CORS headers are present"
-        else
-          echo "❌ CORS headers are missing"
+          echo "❌ Unexpected CORS header: $CORS_HEADER"
           exit 1
+        else
+          echo "✅ No Access-Control-Allow-Origin header"
+        fi
+
+        echo "Testing that .git is not served..."
+        GIT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/.git/config)
+        if [ "$GIT_STATUS" != "403" ]; then
+          echo "❌ /.git/config returned $GIT_STATUS"
+          exit 1
+        else
+          echo "✅ /.git/config is forbidden"
         fi
 
         # Clean up
         kill $SERVER_PID 2>/dev/null || true
+
+    - name: Run server security checks
+      run: python3 test_security.py
 
   test-data-integrity:
     name: Test Data Integrity
@@ -326,6 +350,14 @@ jobs:
                 browser.close()
                 server.terminate()
         "
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Run graph security checks
+      run: python3 test_security.py --browser
 
   performance-test:
     name: Performance Test

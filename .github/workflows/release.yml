@@ -11,6 +11,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   create-release:
     name: Create Release
@@ -104,57 +107,18 @@ jobs:
         print('✅ Release notes generated')
         "
         
-    - name: Create release
-      id: create-release
-      uses: actions/create-release@v1
+    - name: Create release and upload assets
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name || github.event.inputs.version }}
-        release_name: Book of Mormon Knowledge Graph ${{ github.ref_name || github.event.inputs.version }}
-        body_path: RELEASE_NOTES.md
-        draft: false
-        prerelease: false
-        
-    - name: Upload release assets
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: knowledge-graph.html
-        asset_name: knowledge-graph.html
-        asset_content_type: text/html
-        
-    - name: Upload JSON data
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: knowledge-graph.json
-        asset_name: knowledge-graph.json
-        asset_content_type: application/json
-        
-    - name: Upload validation script
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: validate.py
-        asset_name: validate.py
-        asset_content_type: text/x-python
-        
-    - name: Upload contribution template
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: contribution-template.json
-        asset_name: contribution-template.json
-        asset_content_type: application/json
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.ref_name || github.event.inputs.version }}
+      run: |
+        gh release create "$RELEASE_TAG" \
+          --title "Book of Mormon Knowledge Graph ${RELEASE_TAG}" \
+          --notes-file RELEASE_NOTES.md \
+          knowledge-graph.html \
+          knowledge-graph.json \
+          validate.py \
+          contribution-template.json
 
   validate-release:
     name: Validate Release
