@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Book of Mormon Knowledge Graph</title>
-  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js" integrity="sha384-6ox9IspbVlrc5vabD45kZcCJ8HeSwMAQjf9Iq48U/+srTVTNzsB7EqDC5oYpA0WC" crossorigin="anonymous"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style type="text/css">
     * {
@@ -591,6 +591,16 @@
       var detailsPane = document.getElementById("detailsPane");
       var detailsContent = document.getElementById("detailsContent");
 
+      // Graph JSON is contributor-controlled, so anything inserted as HTML is escaped.
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
       // Function to create clickable reference links
       function createReferenceLinks(references) {
         if (!references || references.length === 0) {
@@ -598,19 +608,19 @@
         }
         
         return references.map(ref => {
+          const refText = String(ref);
           // Parse the reference (e.g., "1 Nephi 1:4" -> "1 Nephi 1:4")
-          const encodedRef = encodeURIComponent(ref);
+          const encodedRef = encodeURIComponent(refText);
           const churchUrl = `https://www.churchofjesuschrist.org/study/scriptures/bofm/${encodedRef.toLowerCase().replace(/\s+/g, '-')}?lang=eng`;
-          const ldsUrl = `https://www.lds.org/scriptures/bofm/${encodedRef.toLowerCase().replace(/\s+/g, '-')}?lang=eng`;
           
-          return `<a href="${churchUrl}" target="_blank" rel="noopener noreferrer" 
+          return `<a href="${escapeHtml(churchUrl)}" target="_blank" rel="noopener noreferrer" 
                      style="color: #667eea; text-decoration: none; font-size: 13px; 
                             display: inline-block; margin: 2px 4px 2px 0; padding: 2px 6px; 
                             background: #f7fafc; border-radius: 4px; border: 1px solid #e2e8f0;
                             transition: all 0.2s ease;" 
                      onmouseover="this.style.background='#667eea'; this.style.color='white'; this.style.borderColor='#667eea';"
                      onmouseout="this.style.background='#f7fafc'; this.style.color='#667eea'; this.style.borderColor='#e2e8f0';">
-                   ${ref}
+                   ${escapeHtml(refText)}
                  </a>`;
         }).join('');
       }
@@ -649,21 +659,13 @@
               <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Connected Entities:</div>
               <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                 ${connectedNodes.map(({ node, relationship }) => `
-                  <span style="display: inline-block; padding: 2px 6px; background: #edf2f7; 
+                  <span data-node-id="${escapeHtml(node.id)}" style="display: inline-block; padding: 2px 6px; background: #edf2f7; 
                                border-radius: 4px; font-size: 12px; color: #4a5568; cursor: pointer;
                                transition: all 0.2s ease;" 
                         onmouseover="this.style.background='#667eea'; this.style.color='white';"
-                        onmouseout="this.style.background='#edf2f7'; this.style.color='#4a5568';"
-                        onclick="
-                          const nodeData = graphData.nodes.find(n => n.id === '${node.id}');
-                          if (nodeData) {
-                            selectedNodeId = '${node.id}';
-                            displayNodeDetails(nodeData, true);
-                            highlightNode('${node.id}');
-                          }
-                        ">
-                    ${node.label}
-                    <span style="color: #a0aec0; font-size: 10px;">(${relationship})</span>
+                        onmouseout="this.style.background='#edf2f7'; this.style.color='#4a5568';">
+                    ${escapeHtml(node.label)}
+                    <span style="color: #a0aec0; font-size: 10px;">(${escapeHtml(relationship)})</span>
                   </span>
                 `).join('')}
               </div>
@@ -675,16 +677,16 @@
           <div class="fade-in ${selectionClass}">
             <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 18px; font-weight: 600; 
                        ${isSelected ? 'color: #667eea;' : ''}">
-              ${nodeData.label}
+              ${escapeHtml(nodeData.label)}
               ${isSelected ? '<span style="font-size: 12px; color: #718096; margin-left: 8px;">(Selected)</span>' : ''}
             </h4>
             <div style="margin-bottom: 12px;">
               <span style="font-weight: 500; color: #4a5568;">Type:</span> 
-              <span style="color: #667eea; font-weight: 500; text-transform: capitalize;">${nodeData.type}</span>
+              <span style="color: #667eea; font-weight: 500; text-transform: capitalize;">${escapeHtml(nodeData.type)}</span>
             </div>
             <div style="margin-bottom: 12px;">
               <span style="font-weight: 500; color: #4a5568;">ID:</span> 
-              <span style="color: #718096; font-family: monospace; font-size: 12px;">${nodeData.id}</span>
+              <span style="color: #718096; font-family: monospace; font-size: 12px;">${escapeHtml(nodeData.id)}</span>
             </div>
             <div>
               <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Scriptural References:</div>
@@ -695,7 +697,7 @@
             ${nodeData.date ? `
               <div style="margin-top: 12px;">
                 <span style="font-weight: 500; color: #4a5568;">Date:</span> 
-                <span style="color: #667eea; font-weight: 500;">${nodeData.date}</span>
+                <span style="color: #667eea; font-weight: 500;">${escapeHtml(nodeData.date)}</span>
               </div>
             ` : ''}
             ${connectionsHtml}
@@ -723,15 +725,15 @@
               <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px; font-weight: 600;">Relationship</h4>
               <div style="margin-bottom: 8px;">
                 <span style="font-weight: 500; color: #4a5568;">From:</span> 
-                <span style="color: #667eea; font-weight: 500;">${fromNode ? fromNode.label : edgeData.from}</span>
+                <span style="color: #667eea; font-weight: 500;">${escapeHtml(fromNode ? fromNode.label : edgeData.from)}</span>
               </div>
               <div style="margin-bottom: 8px;">
                 <span style="font-weight: 500; color: #4a5568;">To:</span> 
-                <span style="color: #667eea; font-weight: 500;">${toNode ? toNode.label : edgeData.to}</span>
+                <span style="color: #667eea; font-weight: 500;">${escapeHtml(toNode ? toNode.label : edgeData.to)}</span>
               </div>
               <div style="margin-bottom: 12px;">
                 <span style="font-weight: 500; color: #4a5568;">Relationship:</span> 
-                <span style="color: #718096; text-transform: capitalize;">${edgeData.label || 'Connected'}</span>
+                <span style="color: #718096; text-transform: capitalize;">${escapeHtml(edgeData.label || 'Connected')}</span>
               </div>
               <div>
                 <div style="font-weight: 500; color: #4a5568; margin-bottom: 8px;">Scriptural References:</div>
@@ -745,6 +747,22 @@
 
       // Track selected node
       var selectedNodeId = null;
+
+      // Neighbor chips carry the node id in an attribute. Do not interpolate ids into script.
+      detailsContent.addEventListener('click', function (event) {
+        const chip = event.target.closest('[data-node-id]');
+        if (!chip || !detailsContent.contains(chip)) {
+          return;
+        }
+        const id = chip.getAttribute('data-node-id');
+        const linked = graphData.nodes.find(node => node.id === id);
+        if (!linked) {
+          return;
+        }
+        selectedNodeId = id;
+        displayNodeDetails(linked, true);
+        highlightNode(id);
+      });
 
       // Handle node clicks
       network.on('click', function (params) {
@@ -890,7 +908,11 @@
     })
     .catch(error => {
       console.error('Error initializing graph:', error);
-      document.getElementById('mynetwork').innerHTML = '<p>Error loading graph: ' + error.message + '</p>';
+      const networkEl = document.getElementById('mynetwork');
+      networkEl.replaceChildren();
+      const message = document.createElement('p');
+      message.textContent = 'Error loading graph: ' + (error && error.message ? error.message : error);
+      networkEl.appendChild(message);
     });
 </script>
 </body>

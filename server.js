@@ -1,17 +1,35 @@
 #!/usr/bin/env node
 /**
- * Simple HTTP server to serve the knowledge graph files locally.
- * This resolves CORS issues when loading JSON data in the browser.
+ * Loopback static server for the knowledge graph.
+ * The page and JSON are same-origin, so wildcard CORS is not sent.
+ * Hidden files (including .git) and paths outside this directory are refused.
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
-const PORT = 8000;
+const ROOT = path.resolve(__dirname);
 
-// MIME types for different file extensions
+function parsePort(argv, fallback) {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg.startsWith('--port=')) {
+      return Number(arg.slice('--port='.length));
+    }
+    if (arg === '--port') {
+      return Number(argv[i + 1]);
+    }
+  }
+  return fallback;
+}
+
+const PORT = parsePort(process.argv.slice(2), 8000);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  console.error('Invalid port');
+  process.exit(1);
+}
+
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -24,71 +42,129 @@ const mimeTypes = {
   '.ico': 'image/x-icon'
 };
 
-const server = http.createServer((req, res) => {
-  // Add CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+function resolveFromRoot(rawPathname) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawPathname);
+  } catch {
+    return null;
+  }
+  if (decoded.includes('\0')) {
+    return null;
+  }
 
-  const parsedUrl = url.parse(req.url);
-  let pathname = parsedUrl.pathname;
+  const parts = [];
+  for (const part of decoded.split(/[/\\]/)) {
+    if (part === '' || part === '.') {
+      continue;
+    }
+    // Reject parent traversal and dotfiles such as .git/config.
+    if (part === '..' || part.startsWith('.')) {
+      return null;
+    }
+    parts.push(part);
+  }
 
-  // Default to knowledge-graph.html if root is requested
+  const filePath = path.resolve(ROOT, ...parts);
+  const relative = path.relative(ROOT, filePath);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return null;
+  }
+  return filePath;
+}
+
+function send(res, status, body, headers) {
+  res.writeHead(status, headers);
+  res.end(body);
+}
+
+const handler = (req, res) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    send(res, 405, 'Method not allowed', {
+      'Content-Type': 'text/plain',
+      Allow: 'GET, HEAD'
+    });
+    return;
+  }
+
+  const rawUrl = req.url || '/';
+  let pathname = rawUrl.split('?')[0].split('#')[0];
   if (pathname === '/') {
     pathname = '/knowledge-graph.html';
   }
 
-  // Remove leading slash and resolve path
-  const filePath = path.join(__dirname, pathname);
-
-  // Security check - prevent directory traversal
-  if (!filePath.startsWith(__dirname)) {
-    res.writeHead(403, { 'Content-Type': 'text/plain' });
-    res.end('Forbidden');
+  const filePath = resolveFromRoot(pathname);
+  if (!filePath) {
+    send(res, 403, 'Forbidden', { 'Content-Type': 'text/plain' });
     return;
   }
 
-  // Check if file exists
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('File not found');
+  fs.realpath(filePath, (realErr, realPath) => {
+    if (realErr) {
+      send(res, 404, 'File not found', { 'Content-Type': 'text/plain' });
       return;
     }
 
-    // Get file extension and set content type
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const relative = path.relative(ROOT, realPath);
+    const escaped = relative.startsWith('..')
+      || path.isAbsolute(relative)
+      || relative.split(path.sep).some((part) => part.startsWith('.'));
+    if (escaped) {
+      send(res, 403, 'Forbidden', { 'Content-Type': 'text/plain' });
+      return;
+    }
 
-    // Read and serve the file
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal server error');
+    const ext = path.extname(realPath).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    fs.readFile(realPath, (readErr, data) => {
+      if (readErr) {
+        send(res, 500, 'Internal server error', { 'Content-Type': 'text/plain' });
         return;
       }
-
       res.writeHead(200, { 'Content-Type': contentType });
+      if (req.method === 'HEAD') {
+        res.end();
+        return;
+      }
       res.end(data);
     });
   });
-});
+};
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
-  console.log(`Open http://localhost:${PORT}/knowledge-graph.html in your browser`);
+function announce(port) {
+  console.log(`Server running at http://localhost:${port}/`);
+  console.log(`Open http://localhost:${port}/knowledge-graph.html in your browser`);
   console.log('Press Ctrl+C to stop the server');
-});
+}
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.log(`Port ${PORT} is already in use. Trying port ${PORT + 1}...`);
-    server.listen(PORT + 1, () => {
-      console.log(`Server running at http://localhost:${PORT + 1}/`);
-      console.log(`Open http://localhost:${PORT + 1}/knowledge-graph.html in your browser`);
-      console.log('Press Ctrl+C to stop the server');
-    });
-  } else {
+function listen(port) {
+  const v4 = http.createServer(handler);
+  v4.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is already in use. Trying port ${port + 1}...`);
+      listen(port + 1);
+      return;
+    }
     console.error('Server error:', err);
-  }
-});
+  });
+
+  v4.listen(port, '127.0.0.1', () => {
+    let announced = false;
+    const sayReady = () => {
+      if (!announced) {
+        announced = true;
+        announce(port);
+      }
+    };
+
+    const v6 = http.createServer(handler);
+    v6.on('error', () => {
+      sayReady();
+    });
+    v6.listen(port, '::1', () => {
+      sayReady();
+    });
+  });
+}
+
+listen(PORT);
